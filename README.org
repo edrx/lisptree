@@ -21,6 +21,32 @@
 #+OPTIONS: toc:nil num:nil
 #+OPTIONS: org-html-postamble:nil
 
+# (find-angg "luatree/")
+# (find-angg "luatree/luatree.lua")
+# (find-angg "luatree/luatree.lisp")
+# (find-angg "lisptree/")
+# (find-angg "lisptree/lisptree.mac")
+# (find-angg "lisptree/lisptree.lisp")
+# (find-angg "lisptree/lisptree-middle.lisp")
+
+This is a rewrite of [[http://anggtwu.net/eev-maxima.html#luatree][LuaTree]]. The original LuaTree used [[http://anggtwu.net/luatree/luatree.lua.html][luatree.lua]] to
+draw the trees and used [[http://anggtwu.net/luatree/luatree.lisp.html][this Lisp code]] to let Maxima call luatree.lua -
+note that it has a line that says "(require :asdf)"... so LuaTree
+required Lua, [[https://asdf.common-lisp.dev/][ASDF]], and a Maxima compiled with a Lisp that supported
+ASDF; the Maxima that comes with Debian is compiled with GCL, that
+doesn't support ASDF - so LuaTree was hard to use.
+
+LispTree is written in just Maxima and Common Lisp, and it should run
+in any Maxima.
+
+For htmlized versions of the source files in which all the [[http://anggtwu.net/#eev][eev]]-isms
+are hmlized correctly, follow these links: [[http://anggtwu.net/lisptree/lisptree.mac.html][lisptree.mac]],
+[[http://anggtwu.net/lisptree/lisptree-middle.lisp.html][lisptree-middle.lisp]], and [[http://anggtwu.net/lisptree/lisptree.lisp.html][lisptree.lisp]].
+
+For more information, see [[http://angg.twu.net/eev-maxima.html#luatree][my page on Maxima]].
+
+The basic tests are [[http://anggtwu.net/lisptree/lisptree.mac.html#lisptree-tests][here]].
+
 #+begin_comment
  (eepitch-shell)
  (eepitch-kill)
