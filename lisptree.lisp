@@ -4,21 +4,28 @@
 ;;          (find-angg "luatree/lisptree.lisp")
 ;; Author: Eduardo Ochs <eduardoochs@gmail.com>
 ;;
-;; This library does this kind of conversion,
+;; The functions in thie library do these conversions,
 ;;
-;;                       f__.   
-;;			 |  |   
-;;   (f a (g b c))  ==>  a  g__.
-;;			    |  |
-;;			    b  c
+;;                       (("f" "__.")                f__.   
+;;			  ("|" "  " "|")   	     |  |   
+;;   (f a (g b c))  ==>   ("a" "  " "g" "__.")  ==>  a  g__.
+;;			  ("|" "  " "|")	        |  |
+;;			  ("b" "  " "c"))	        b  c
 ;;
-;; from "lispy trees" to a certain 2D format -
-;; a string with newlines.
-;;   
-;; Some eev-isms:
-;; (defun lt () (interactive) (find-angg "luatree/lisptree.lisp"))
-;; (defun sc () (interactive) (find-showconses "show-conses.el"))
-;; (defun le () (interactive) (find-es "lisp"))
+;;      Lispy tree  ==>       lines             ==> 2D tree
+;;
+;; from "Lispy trees" to a "lines object" and then to a "2D tree",
+;; that is a string with newlines.
+;;
+;; They were inspired by this Emacs package:
+;;   http://anggtwu.net/show-conses.html
+;; but here we don't support text properties.
+;;
+;; This is the inner part of LispTree.
+;; The other parts are here:
+;;   middle: (find-lisptree "lisptree-middle.lisp")
+;;    outer: (find-lisptree "lisptree.mac")
+;;
 ;; (find-showconses "show-conses.el" "lr")
 ;; (find-es "lisp" "mapconcat")
 
@@ -41,9 +48,6 @@
 
 ;; «mapconcat»  (to ".mapconcat")
 ;;
-;; (defvar newline
-;;   (format nil "~c" #\Newline))
-
 (defvar newline (format nil "~%"))
 
 (defun concat (&rest strs)
@@ -207,28 +211,31 @@
 
 ;; «tree»  (to ".tree")
 ;;
-(defun maxima-atom (o)
+(defun lispytree-atom (o)
+  "Convert a Lispy tree atom `o' to a lines object."
   (if (stringp o)
       `((,o))
-      `((,(format nil "~a" o)))))
+      `((,(format nil "~s" o)))))
 
-(defun maxima-opargs (op args)
-  (let* ((pin (car (maxima-atom op)))
+(defun lispytree-opargs (op args)
+  "Convert a Lispy tree of the form (op arg1 arg2 ...) to a lines object."
+  (let* ((pin (car (lispytree-atom op)))
 	 (nargs (length args)))
     (if (eq nargs 0)
-	(let* ((down (maxima-atom " ")))
+	(let* ((down (lispytree-atom " ")))
 	  (add-pin pin down))
-	(let* ((down  (maxima (car args)))
+	(let* ((down  (lispytree (car args)))
 	       (ltree (add-pin pin down)))
 	  (if (eq nargs 1)
 	      ltree
-	      (let ((rtree (maxima-opargs "." (cdr args))))
+	      (let ((rtree (lispytree-opargs "." (cdr args))))
 		(l_r ltree rtree)))))))
 
-(defun maxima (o)
+(defun lispytree (o)
+  "Convert a Lispy tree `o' to a lines object."
   (if (listp o)
-      (maxima-opargs (car o) (cdr o))
-      (maxima-atom o)))
+      (lispytree-opargs (car o) (cdr o))
+      (lispytree-atom o)))
 
 
 #|
@@ -238,22 +245,22 @@
 (load "lisptree.lisp")
 (add-pin "*" '())
 
-(maxima-atom   "*")
-(maxima-atom   " ")
-(maxima-opargs "*" '(2 3))
-(maxima-opargs "*" '(2))
-(maxima-opargs "*" '())
+(lispytree-atom   "*")
+(lispytree-atom   " ")
+(lispytree-opargs "*" '(2 3))
+(lispytree-opargs "*" '(2))
+(lispytree-opargs "*" '())
 
 (length '(a b c d))
 '()
 ()
 
-(maxima 2)
-(maxima '(2 3))
-(maxima '(2 3 4))
-(maxima '(2 3 (4 5 6)))
-(toplain-lines (maxima '(2 3 (4 5 6))))
-(toplain-lines (maxima '(2 3 (4 5 "6"))))
+(lispytree 2)
+(lispytree '(2 3))
+(lispytree '(2 3 4))
+(lispytree '(2 3 (4 5 6)))
+(toplain-lines (lispytree '(2 3 (4 5 6))))
+(toplain-lines (lispytree '(2 3 (4 5 "6"))))
 
 |#
 

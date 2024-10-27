@@ -1,15 +1,21 @@
 /*
  * This file:
- *   http://anggtwu.net/luatree/lisptree.mac.html
- *   http://anggtwu.net/luatree/lisptree.mac
- *          (find-angg "luatree/lisptree.mac")
+ *   http://anggtwu.net/lisptree/lisptree.mac.html
+ *   http://anggtwu.net/lisptree/lisptree.mac
+ *               (find-lisptree "lisptree.mac")
+ *      See:  http://anggtwu.net/lisptree.html
+ *       https://github.com/edrx/lisptree
  * Author: Eduardo Ochs <eduardoochs@gmail.com>
+ * License: Public Domain.
+ * Version: 2024oct27.
  *
  * Long story short:
+ * LispTree Draw Maxima objects as trees (using Lisp).
+ * This Maxima command
  *
  *   lisptree(f(2,g(3,4));
  *
- * prints:
+ * prints this:
  *
  *   f__.   
  *   |  |   
@@ -17,41 +23,37 @@
  *      |  |
  *      3  4
  *
- * The conversion is done in several steps. First the Maxima function
- * `lisptree0', defined in this file, converts a Maxima object to a
- * Maxima tree. For example, this
+ * Here is a longer explanation.
+ * A "Maxima object" is something like f(2,g(3,4)).
+ * A "Maxima tree"   is something like [f,2,[g,3,4]].
+ * A "Lispy tree "   is something like ($F 2 ($G 3 4)).
+ * A "2D tree"       is something like this,
  *
- *   lisptree0(f(2,g(3,4));
+ *     f__.
+ *     |  |
+ *     2  g__.
+ *        |  |
+ *        3  4
  *
- * returns something like this:
+ * as a string with newlines.
+ * The main functions in this file do these conversions:
  *
- *   [f, 2, [g, 3, 4]]
+ *   lisptree:    Maxima object --> Maxima tree --> Lispy Tree --> 2D tree
+ *   lisptreeq:   Maxima object --> Maxima tree --> Lispy Tree --> 2D tree
+ *   lispytree:   Maxima object --> Maxima tree --> Lispy tree --> string
+ *   lispytreeq:  Maxima object --> Maxima tree --> Lispy tree --> string
+ *   lisptree0:   Maxima object --> Maxima tree
  *
- * then we call `lisptree1', like:
- *
- *   lisptree1([f, 2, [g, 3, 4]]) 
- *
- * and it returns a 2D string. Note that `lisptree1' is defined in
- * Lisp in lisptree-middle.lisp, and it calls several Lisp functions
- * defined in lisptree.lisp.
- *
- * In a diagram:
- *                                                             f__.
- *                                                             |  |
- *   f(a,g(b,c))  ==>  [f,a,[g,b,c]]  ==>  (f a (g b c))  ==>  a  g__.
- *                                                                |  |
- *            lisptree0        simplifytree     lisptree::        b  c
- *                        |                       maxima       ^
- *                        |                                    |
- *                        \------------------------------------/
- *                                  lisptree1
+ * The versions that end in "q" are macros that quote their arguments.
+ * `lisptree0' is very configurable. See `lisptree0_config' below.
  *
  * (defun e () (interactive) (find-angg "luatree/lisptree.mac"))
  * (find-angg "MAXIMA/luatree3.mac")
  *
  * «.load-lisp»			(to "load-lisp")
- * «.handle-symbols»		(to "handle-symbols")
- * «.handle-symbols-tests»	(to "handle-symbols-tests")
+ * «.verbs-and-nouns»		(to "verbs-and-nouns")
+ * «.atoms»			(to "atoms")
+ * «.atoms-test»		(to "atoms-test")
  * «.lisptree0»			(to "lisptree0")
  * «.lisptree0-tests»		(to "lisptree0-tests")
  * «.config»			(to "config")
@@ -62,59 +64,98 @@
 
 
 /* «load-lisp»  (to ".load-lisp")
- * (find-anchor "~/luatree/lisptree.lisp")
- * (find-anchor "~/luatree/lisptree-middle.lisp")
+ * Outer part:  this file.
+ * Middle part: (find-lisptree "lisptree-middle.lisp")
+ * Inner part:  (find-lisptree "lisptree.lisp")
 */
 lisptreedir : pathname_directory(load_pathname);
 load(concat(lisptreedir, "lisptree.lisp"));
 load(concat(lisptreedir, "lisptree-middle.lisp"));
 
+format([args]) := apply(?format, append([false], args));
+format0    (o) := format("~s",o); /* the Lisp representation of o, as a string */
+stringp    (o) := ?stringp(o);         /* instead of an autoload to stringproc */
 
-/* «handle-symbols»  (to ".handle-symbols")
- * See: (find-es "maxima" "low-level-nouns")
+
+/* «atoms»  (to ".atoms")
+ * See: (find-maximanode "Lisp and Maxima" "Lisp symbol" "?foo")
+ *      (find-maximanode "Nouns and Verbs" "verb form" "$")
+ *      (find-maximanode "Nouns and Verbs" "noun form" "%")
+ *      (find-es "maxima" "low-level-nouns")
 */
-stringp     (o) := ?stringp(o);       /* redefine the autoload to stringproc */
-format ([args]) := apply(?format, append([false], args));
-format0     (o) := format("~s",o);    /* low-level representation */
-verbp       (o) := symbolp(o) and (o = verbify(o));
-nounp       (o) := symbolp(o) and (o = nounify(o));
-specialnounp(o) := nounp(o) and (string(o)#concat("",o));
+lisptree0_string0(o) := o;                 /* send strings to Lisp unchanged */
+lisptree0_string1(o) := format("~s", o); /* add double quotes to all strings */
+lisptree0_number0(o) := o;                 /* send numbers to Lisp unchanged */
+lisptree0_number1(o) := string(o);
 
-lisptree0_symbol0(o) := format0(o);  /* Low-level names: %FOO, $FOO and FOO  */
+verbp            (o) := symbolp(o) and (o = verbify(o));
+nounp            (o) := symbolp(o) and (o = nounify(o));
+specialnounp     (o) := nounp(o) and (string(o)#concat("",o));
+
+lisptree0_symbol0(o) := o;                 /* send symbols to Lisp unchanged */
+lisptree0_symbol1(o) := format0(o);   /* Low-level names: %FOO, $FOO and FOO */
+lisptree0_symbol3(o) :=
+  if nounp(o) then concat("'",string(o))  /* %DERIVATIVE -> 'diff            */
+  else                        string(o);  /* $FOO        -> foo, FOO -> ?foo */
 lisptree0_symbol4(o) :=
   if specialnounp(o) then concat("",o)    /* %DERIVATIVE -> derivative       */
   elseif nounp(o)    then concat("'",o)   /* %F          -> 'f               */
   else                    string(o);      /* $FOO        -> foo, FOO -> ?foo */
-lisptree0_symbol3(o) :=
-  if nounp(o) then concat("'",string(o))  /* %DERIVATIVE -> 'diff            */
-  else                        string(o);  /* $FOO        -> foo, FOO -> ?foo */
 
-/* «handle-symbols-tests»  (to ".handle-symbols-tests")
+/* «atoms-test»  (to ".atoms-test")
  (eepitch-maxima)
  (eepitch-kill)
  (eepitch-maxima)
 load("lisptree.mac");
-__diff : op('( diff(x^2,x)));
-_qdiff : op('('diff(x^2,x)));
 __f    : op('( f(x)));
 _qf    : op('('f(x)));
+__diff : op('( diff(x^2,x)));
+_qdiff : op('('diff(x^2,x)));
+[o:__f,    verbp(o), nounp(o), specialnounp(o)];
+[o:__diff, verbp(o), nounp(o), specialnounp(o)];
+[o:_qf,    verbp(o), nounp(o), specialnounp(o)];
+[o:_qdiff, verbp(o), nounp(o), specialnounp(o)];
+
 mysymbols : [__diff, _qdiff, __f, _qf, foo, ?foo];
-line0 : makelist(lisptree0_symbol0(o), o, mysymbols);
-line4 : makelist(lisptree0_symbol4(o), o, mysymbols);
-line3 : makelist(lisptree0_symbol3(o), o, mysymbols);
-matrix(line0, line4, line3);
+format0(mysymbols);
+format0(map('lisptree0_symbol0, mysymbols));
+format0(map('lisptree0_symbol1, mysymbols));
+format0(map('lisptree0_symbol3, mysymbols));
+format0(map('lisptree0_symbol4, mysymbols));
+
+*/
+
+/* «config»  (to ".config")
+*/
+
+lisptree0_config ([opts]) := makelist(lisptree0_config1(opt), opt, opts);
+lisptree0_config1(opt)    :=
+  if     opt = 'nq then lisptree0_string (o) := lisptree0_string0(o) /* no quotes */
+  elseif opt = 'q  then lisptree0_string (o) := lisptree0_string1(o) /* use quotes */
+  elseif opt = 'n0 then lisptree0_number (o) := lisptree0_number0(o)
+  elseif opt = 'n1 then lisptree0_number (o) := lisptree0_number1(o)
+  elseif opt = 's0 then lisptree0_symbol (o) := lisptree0_symbol0(o)
+  elseif opt = 's1 then lisptree0_symbol (o) := lisptree0_symbol1(o)
+  elseif opt = 's3 then lisptree0_symbol (o) := lisptree0_symbol3(o)
+  elseif opt = 's4 then lisptree0_symbol (o) := lisptree0_symbol4(o)
+  else error();
+
+/* «config-tests»  (to ".config-tests")
+ (eepitch-maxima)
+ (eepitch-kill)
+ (eepitch-maxima)
+load("lisptree.mac");
+lisptree0_config(nq,s0)$   lisptree0(f("foo", ?f));
+lisptree0_config(q, s4)$   lisptree0(f("foo", ?f));
 
 */
 
 
 /* «lisptree0»  (to ".lisptree0")
 */
-lisptree0_number (o) := string(o);
-lisptree0_string (o) := concat("", o);         /* for foo without quotes */
-lisptree0_string (o) := format("~s", o);       /* for "foo" with quotes */
-lisptree0_symbol (o) := lisptree0_symbol0(o);  /* for %DERIVATIVE */
-lisptree0_symbol (o) := lisptree0_symbol3(o);  /* for 'diff       */
-lisptree0_symbol (o) := lisptree0_symbol4(o);  /* for derivative  */
+lisptree0_string (o) := lisptree0_string0(o);  /* Default: don't add double quotes */
+lisptree0_number (o) := lisptree0_string1(o);  /* Default: convert to string */
+lisptree0_symbol (o) := lisptree0_symbol3(o);  /* Default: "'diff" */
 lisptree0_apatom (o) := append([       lisptree0(op(o))], map(lisptree0, args(o)));
 lisptree0_apother(o) := append(["ap",  lisptree0(op(o))], map(lisptree0, args(o)));
 lisptree0_subvarp(o) := append(["[_]", lisptree0(op(o))], map(lisptree0, args(o)));
@@ -132,50 +173,40 @@ lisptree0(o) :=
  (eepitch-kill)
  (eepitch-maxima)
 load("lisptree.mac");
-            lisptree0(f(a,b));
-lisptree1__(lisptree0(f(a,b)));
+lisptree0(f(a,g(b,c)));
 
 */
 
-/* «config»  (to ".config")
-*/
-lisptree_config ([opts]) := makelist(lisptree_config1(opt), opt, opts);
-lisptree_config1(opt)    :=
-  if     opt = 'nq then lisptree0_string (o) := concat("", o)   /* no quotes */
-  elseif opt = 'q  then lisptree0_string (o) := format("~s", o) /* use quotes */
-  elseif opt = 's0 then lisptree0_symbol (o) := lisptree0_symbol0(o)
-  elseif opt = 's3 then lisptree0_symbol (o) := lisptree0_symbol3(o)
-  elseif opt = 's4 then lisptree0_symbol (o) := lisptree0_symbol4(o)
-  else error();
-
-/* «config-tests»  (to ".config-tests")
- (eepitch-maxima)
- (eepitch-kill)
- (eepitch-maxima)
-load("lisptree.mac");
-lisptree_config(nq,s0)$   lisptree0(f("foo", ?f));
-lisptree_config(q, s4)$   lisptree0(f("foo", ?f));
-
-*/
 
 
 /* «lisptree»  (to ".lisptree")
+ * See: (find-lisptree "lisptree-middle.lisp")
+ * These are the high-level words.
 */
-lisptree (o)  := lisptree1(lisptree0(o));
-lisptreeq(o) ::= block([simp:false], lisptree1(lisptree0(o)));
+lispytree (o)  := tolispytreestr(lisptree0(o));
+lispytreeq(o) ::= block([simp:false], tolispytreestr(lisptree0(o)));
+
+lisptree_ (o)  := tolisptree2d_(lisptree0(o));
+lisptree  (o)  := tolisptree2d (lisptree0(o));
+lisptreeq (o) ::= block([simp:false], tolisptree2d(lisptree0(o)));
 
 /* «lisptree-tests»  (to ".lisptree-tests")
  (eepitch-maxima)
  (eepitch-kill)
  (eepitch-maxima)
 load("lisptree.mac");
+lisptree0_config(nq,s0,n0)$  lisptreeq(a+2+3);
+lisptree0_config(q, s3,n0)$  lisptreeq(a+2+3);
+lisptree0_config(nq,s0,n0)$  lispytreeq(a+2+3);
+lisptree0_config(q, s3,n0)$
+
 lisptree (a+2+3);
 lisptreeq(a+2+3);
 lisptreeq(a[b][c][d]);
 lisptreeq(a(b)(c)(d));
-lisptree_config(q, s0)$  lisptreeq('diff(x^2,x));  "%DERIVATIVE"$
-lisptree_config(nq,s4)$  lisptreeq('diff(x^2,x));  "derivative"$
-lisptree_config(nq,s3)$  lisptreeq('diff(x^2,x));  "'diff"$
-lisptree_config(q, s3)$  lisptreeq('diff(x^2,x));  "'diff"$
+lisptree0_config(q, s0)$  lisptreeq('diff(x^2,x));  "%DERIVATIVE"$
+lisptree0_config(nq,s4)$  lisptreeq('diff(x^2,x));  "derivative"$
+lisptree0_config(nq,s3)$  lisptreeq('diff(x^2,x));  "'diff"$
+lisptree0_config(q, s3)$  lisptreeq('diff(x^2,x));  "'diff"$
 
 */
