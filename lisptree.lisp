@@ -3,8 +3,10 @@
 ;;   http://anggtwu.net/luatree/lisptree.lisp
 ;;          (find-angg "luatree/lisptree.lisp")
 ;; Author: Eduardo Ochs <eduardoochs@gmail.com>
+;; License: Public Domain
+;; Date: 2024oct29
 ;;
-;; The functions in thie library do these conversions,
+;; The functions in this library do these conversions,
 ;;
 ;;                       (("f" "__.")                f__.   
 ;;			  ("|" "  " "|")   	     |  |   
@@ -263,43 +265,6 @@
 (toplain-lines (lispytree '(2 3 (4 5 "6"))))
 
 |#
-
-
-
-#|
- (eepitch-sly)
- (eepitch-kill)
- (eepitch-sly)
-(load "lisptree.lisp")
-(apropos "simplifymaxima")
-(apropos "mlist")
-
-(defun foo::bar ())
-
-|#
-
-
-#|
- (eepitch-maxima)
- (eepitch-kill)
- (eepitch-maxima)
-load("~/luatree/lisptree.lisp");
-lisptree(2);
-?lisptree(2);
-to_lisp();
-  (apropos "lisptree")
-  (apropos "simplifymaxima")
-  (packagep "lisptree")
-  (find-package "lisptree")
-  (find-package :lisptree)
-  (describe 'lisptree::lr)
-  (apropos "simplifymaxima")
-  #$[x, y, z]$
-  (simplifymaximatree 2)
-
-|#
-
-
 
 
 

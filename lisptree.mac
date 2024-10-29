@@ -7,7 +7,7 @@
  *       https://github.com/edrx/lisptree
  * Author: Eduardo Ochs <eduardoochs@gmail.com>
  * License: Public Domain.
- * Version: 2024oct27.
+ * Version: 20241029.
  *
  * Long story short:
  * LispTree Draw Maxima objects as trees (using Lisp).
@@ -51,6 +51,7 @@
  * (find-angg "MAXIMA/luatree3.mac")
  *
  * «.load-lisp»			(to "load-lisp")
+ * «.format»			(to "format")
  * «.verbs-and-nouns»		(to "verbs-and-nouns")
  * «.atoms»			(to "atoms")
  * «.atoms-test»		(to "atoms-test")
@@ -72,6 +73,9 @@ lisptreedir : pathname_directory(load_pathname);
 load(concat(lisptreedir, "lisptree.lisp"));
 load(concat(lisptreedir, "lisptree-middle.lisp"));
 
+
+/* «format»  (to ".format")
+*/
 format([args]) := apply(?format, append([false], args));
 format0    (o) := format("~s",o); /* the Lisp representation of o, as a string */
 stringp    (o) := ?stringp(o);         /* instead of an autoload to stringproc */
@@ -82,6 +86,9 @@ stringp    (o) := ?stringp(o);         /* instead of an autoload to stringproc *
  *      (find-maximanode "Nouns and Verbs" "verb form" "$")
  *      (find-maximanode "Nouns and Verbs" "noun form" "%")
  *      (find-es "maxima" "low-level-nouns")
+ *
+ * Note: THIS IS BUGGY!
+ * See the test below!
 */
 lisptree0_string0(o) := o;                 /* send strings to Lisp unchanged */
 lisptree0_string1(o) := format("~s", o); /* add double quotes to all strings */
@@ -107,21 +114,17 @@ lisptree0_symbol4(o) :=
  (eepitch-kill)
  (eepitch-maxima)
 load("lisptree.mac");
-__f    : op('( f(x)));
-_qf    : op('('f(x)));
-__diff : op('( diff(x^2,x)));
-_qdiff : op('('diff(x^2,x)));
-[o:__f,    verbp(o), nounp(o), specialnounp(o)];
-[o:__diff, verbp(o), nounp(o), specialnounp(o)];
-[o:_qf,    verbp(o), nounp(o), specialnounp(o)];
-[o:_qdiff, verbp(o), nounp(o), specialnounp(o)];
+_qfoo      : op('foo(42));
+_qdiff     : op('diff(y,x));
+mysymbols  : [?foo, foo, _qfoo, diff, _qdiff];
+lsymbol(n) := parse_string(concat("lisptree0_symbol", n));
+lsyline(n) := map(lsymbol(n),mysymbols);
+lsylines   :  matrix(lsyline(0), lsyline(1), lsyline(3), lsyline(4));
 
-mysymbols : [__diff, _qdiff, __f, _qf, foo, ?foo];
-format0(mysymbols);
-format0(map('lisptree0_symbol0, mysymbols));
-format0(map('lisptree0_symbol1, mysymbols));
-format0(map('lisptree0_symbol3, mysymbols));
-format0(map('lisptree0_symbol4, mysymbols));
+propline(o) := [format0(o), verbp(o), nounp(o), specialnounp(o)];
+topline     : rhs(fundef(propline));
+otherlines  : map('propline, mysymbols);
+proplines   : apply('matrix, append([topline],otherlines));
 
 */
 
