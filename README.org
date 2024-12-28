@@ -29,6 +29,10 @@
 # (find-angg "lisptree/lisptree.lisp")
 # (find-angg "lisptree/lisptree-middle.lisp")
 
+#+TITLE: Draw Maxima objects as trees (using Lisp)
+
+* Introduction
+
 This is a rewrite of [[http://anggtwu.net/eev-maxima.html#luatree][LuaTree]]. The original LuaTree used [[http://anggtwu.net/luatree/luatree.lua.html][luatree.lua]] to
 draw the trees and used [[http://anggtwu.net/luatree/luatree.lisp.html][this Lisp code]] to let Maxima call luatree.lua -
 note that it has a line that says "(require :asdf)"... so LuaTree

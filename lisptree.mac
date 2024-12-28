@@ -7,7 +7,7 @@
  *       https://github.com/edrx/lisptree
  * Author: Eduardo Ochs <eduardoochs@gmail.com>
  * License: Public Domain.
- * Version: 20241029.
+ * Version: 20241104.
  *
  * Long story short:
  * LispTree Draw Maxima objects as trees (using Lisp).
@@ -52,7 +52,6 @@
  *
  * «.load-lisp»			(to "load-lisp")
  * «.format»			(to "format")
- * «.verbs-and-nouns»		(to "verbs-and-nouns")
  * «.atoms»			(to "atoms")
  * «.atoms-test»		(to "atoms-test")
  * «.lisptree0»			(to "lisptree0")
@@ -141,6 +140,10 @@ lisptree0_config1(opt)    :=
   elseif opt = 's1 then lisptree0_symbol (o) := lisptree0_symbol1(o)
   elseif opt = 's3 then lisptree0_symbol (o) := lisptree0_symbol3(o)
   elseif opt = 's4 then lisptree0_symbol (o) := lisptree0_symbol4(o)
+  elseif opt = 'raw    then lisptree0_config('nq,'n0,'s0)
+  elseif opt = 'lisp   then lisptree0_config( 'q,'n1,'s1)
+  elseif opt = 'maxima then lisptree0_config('nq,'n1,'s4)
+  elseif opt = 'Maxima then lisptree0_config( 'q,'n1,'s4)
   else error();
 
 /* «config-tests»  (to ".config-tests")
@@ -148,8 +151,14 @@ lisptree0_config1(opt)    :=
  (eepitch-kill)
  (eepitch-maxima)
 load("lisptree.mac");
-lisptree0_config(nq,s0)$   lisptree0(f("foo", ?f));
-lisptree0_config(q, s4)$   lisptree0(f("foo", ?f));
+lisptree0_config(nq,s0)$    lisptree0(f("foo", ?f));
+lisptree0_config(q, s4)$    lisptree0(f("foo", ?f));
+
+fundef(format);
+lisptree0_config('raw)$     lisptree(fundef(format));
+lisptree0_config('lisp)$    lisptree(fundef(format));
+lisptree0_config('maxima)$  lisptree(fundef(format));
+lisptree0_config('Maxima)$  lisptree(fundef(format));
 
 */
 
