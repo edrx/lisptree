@@ -1,0 +1,129 @@
+/*
+ * This file:
+ *   http://anggtwu.net/lisptree/vbtbox.mac.html
+ *   http://anggtwu.net/lisptree/vbtbox.mac
+ *          (find-angg "lisptree/vbtbox.mac")
+ * Author: Eduardo Ochs <eduardoochs@gmail.com>
+ * Date: 2025sep21
+ *
+ * This file implements the part in Maxima of the "support for
+ * vbtboxes" in Lisptree. By default Lisptree returns multiline
+ * strings, and its output is like this:
+ *
+ *   (%i2) lisptree(f(a,b));
+ *   (%o2)
+ *   f__.
+ *   |  |
+ *   a  b
+ *   (%i3)
+ *
+ * When Lisptree is configured to use "vbtbox"es lisptree(f(a,b))
+ * returns an object like this instead,
+ *
+ *   vbtbox("f__.",
+ *          "|  |",
+ *          "a  b")
+ *
+ * and vbtboxes are displayed as matrices by `display2d' and as
+ * verbatim boxes on a beige background by `tex1'.
+ *
+ * This file: (find-lisptree "vbtbox.mac")
+ *       See: (find-lisptree "vbtbox.lisp")
+ *            (find-lisptree "vbtbox.lua")
+ *            (find-lisptree "call-lua.c")
+ *
+ * «.display2d»		(to "display2d")
+ * «.display2d-tests»	(to "display2d-tests")
+ * «.lisptree»		(to "lisptree")
+ * «.lisptree-tests»	(to "lisptree-tests")
+ * «.tex»		(to "tex")
+ * «.tex-tests»		(to "tex-tests")
+*/
+
+load("~/lisptree/vbtbox.lisp");
+load("~/MAXIMA/displa-delegate.lisp");
+
+
+/* «display2d»  (to ".display2d")
+ * See: (find-angg "MAXIMA/displa-delegate.lisp")
+ *      (find-lisptree "vbtbox.lisp" "maxima")
+*/
+displa_delegate('vbtbox, 'vbtbox_translate);
+vbtbox_translate(o)  := block([strs],
+                               strs : args(o),
+                              transpose(matrix(strs)));
+vbtbox_split(bigstr) := apply('vbtbox, splitlines(bigstr));
+
+/* «display2d-tests»  (to ".display2d-tests")
+ (eepitch-maxima)
+ (eepitch-kill)
+ (eepitch-maxima)
+load("lisptree.mac");
+load("vbtbox.mac");
+o : vbtbox("ab", "cd");
+lisptree_(o);
+o : vbtbox_split("ab
+cd");
+lisptree_(o);
+
+*/
+
+
+/* «lisptree»  (to ".lisptree")
+ * Override some top-level functions from Lisptree. The originals are:
+ * (find-lisptree "lisptree.mac" "lisptree")
+*/
+lisptree_ (o)  :=                     tolisptree2d_(lisptree0(o));
+lisptree  (o)  :=                     tolisptree2d (lisptree0(o));
+lisptreeq (o) ::= block([simp:false], tolisptree2d (lisptree0(o)));
+/* We will override them with: */
+lisptree_ (o)  :=              tolisptree2d (lisptree0(o));
+lisptree  (o)  := vbtbox_split(tolisptree2d_(lisptree0(o)));
+lisptreeq_(o) ::= block([simp:false], lisptree_(o));
+lisptreeq (o) ::= block([simp:false], lisptree (o));
+
+/* This one is new: */
+lisptree2 (o)  := (o = lisptree(o));
+/* This one in new AND broken: */
+lisptreeq2(o) ::= block([simp:false], o) = lisptreeq(o);
+
+/* «lisptree-tests»  (to ".lisptree-tests")
+ (eepitch-maxima)
+ (eepitch-kill)
+ (eepitch-maxima)
+load("lisptree.mac");
+load("vbtbox.mac");
+o : f(a,b);
+lisptree (o);
+lisptree_(o);
+lisptreeq_(2+3);
+lisptreeq (2+3);
+lisptree2 (a+b);
+lisptreeq2(2+3);
+
+tex1(lisptree2 (a+b));
+
+
+*/
+
+
+
+/* «tex»  (to ".tex")
+ * See: (find-lisptree "vbtbox.lisp")
+*/
+texput('vbtbox, 'vbtbox_tex);
+vbtbox_tex(o) := verbatimbgbox0(apply('join_as_lines, args(o)));
+
+/* «tex-tests»  (to ".tex-tests")
+ (eepitch-maxima)
+ (eepitch-kill)
+ (eepitch-maxima)
+load("vbtbox.mac");
+o : vbtbox("a_b", "c d");
+tex1(o);
+
+*/
+
+
+
+

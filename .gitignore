@@ -1,2 +1,7 @@
 *.png
+*.so
 *~
+.*
+call-lua
+call-lua.gdb
+lisptree.el
