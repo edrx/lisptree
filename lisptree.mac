@@ -1,15 +1,14 @@
 /*
  * This file:
- *   http://anggtwu.net/lisptree/lisptree.mac.html
- *   http://anggtwu.net/lisptree/lisptree.mac
- *               (find-lisptree "lisptree.mac")
- *      See:  http://anggtwu.net/lisptree.html
- *       https://github.com/edrx/lisptree
+ *   https://anggtwu.net/lisptree/lisptree.mac.html
+ *   https://anggtwu.net/lisptree/lisptree.mac
+ *                (find-lisptree "lisptree.mac")
+ *      See:  https://anggtwu.net/lisptree.html  (<- has screenshots!)
+ *        https://github.com/edrx/lisptree
  * Author: Eduardo Ochs <eduardoochs@gmail.com>
  * License: Public Domain.
- * Version: 20241104.
+ * Version: 2025oct04
  *
- * Long story short:
  * LispTree Draw Maxima objects as trees (using Lisp).
  * This Maxima command
  *
@@ -17,13 +16,117 @@
  *
  * prints this:
  *
- *   f__.   
- *   |  |   
+ *   f__.
+ *   |  |
  *   2  g__.
  *      |  |
  *      3  4
  *
- * Here is a longer explanation.
+ * See the "introduction" below for more details.
+ *
+ * «.introduction»		(to "introduction")
+ * «.introduction-tests»	(to "introduction-tests")
+ * «.download-test»		(to "download-test")
+ * «.types»			(to "types")
+ * «.load-lisp»			(to "load-lisp")
+ * «.format»			(to "format")
+ * «.atoms»			(to "atoms")
+ * «.atoms-tests»		(to "atoms-tests")
+ * «.lisptree0»			(to "lisptree0")
+ * «.lisptree0-tests»		(to "lisptree0-tests")
+ * «.config»			(to "config")
+ * «.config-tests»		(to "config-tests")
+ * «.lisptree»			(to "lisptree")
+ * «.lisptree-tests»		(to "lisptree-tests")
+*/
+
+/* «introduction»  (to ".introduction")
+ * The main top-level function in this file is `lisptree', that draws
+ * Maxima objects as trees, like this:
+ *
+ *                               f__.   
+ *                               |  |   
+ *   lisptree(f(2,g(3,4));  ==>  2  g__.
+ *                                  |  |
+ *                                  3  4
+ *
+ * Lisptree has some support for drawing as trees Maxima objects whose
+ * tree representations are not obvious. Here are some examples:
+ *
+ *   lisptree(a[b,c][d,e](f,g)(h,i));
+ *
+ *       ap_____________________.__.
+ *       |                      |  |
+ *       ap_______________.__.  h  i
+ *       |                |  |  
+ *  ==>  [_]________.__.  f  g  
+ *       |          |  |        
+ *       [_]__.__.  d  e        
+ *       |    |  |              
+ *       a    b  c              
+ *
+ *   format([args]) := apply(?format, append([false], args));
+ *   lisptree(fundef(format));
+ *
+ *       :=______.
+ *       |       |
+ *       format  apply____.
+ *       |       |        |
+ *  ==>  [       ?format  append__.
+ *       |                |       |
+ *       args             [       args
+ *                        |       
+ *                        false   
+ *
+ *   lisptree0_config('lisp)$
+ *   lisptree(fundef(format));
+ *
+ *       ":="_____.
+ *       |        |
+ *       $FORMAT  $APPLY__.
+ *       |        |       |
+ *  ==>  "["      FORMAT  $APPEND__.
+ *       |                |        |
+ *       $ARGS            "["      $ARGS
+ *                        |        
+ *                        NIL      
+*/
+
+/* «introduction-tests»  (to ".introduction-tests")
+ (eepitch-maxima)
+ (eepitch-kill)
+ (eepitch-maxima)
+load("lisptree.mac");
+lisptree(a[b,c][d,e](f,g)(h,i));
+format([args]) := apply(?format, append([false], args))$
+fundef(format);
+lisptree(fundef(format));
+lisptree0_config('lisp)$
+lisptree(fundef(format));
+
+*/
+
+
+/* «download-test»  (to ".download-test")
+ Download Lisptree in /tmp/lisptree/ and test it there.
+ (eepitch-shell)
+ (eepitch-kill)
+ (eepitch-shell)
+rm -Rfv /tmp/lisptree/
+mkdir   /tmp/lisptree/
+git clone https://github.com/edrx/lisptree /tmp/lisptree/
+maxima --no-init
+  load("/tmp/lisptree/lisptree.mac");
+  lisptree(a[b,c][d,e](f,g)(h,i));
+  lisptree(fundef(format));
+  lisptree0_config('lisp)$
+  lisptree(fundef(format));
+
+*/
+
+
+/* «types»  (to ".types")
+ * Lisp handles these types of objects:
  * A "Maxima object" is something like f(2,g(3,4)).
  * A "Maxima tree"   is something like [f,2,[g,3,4]].
  * A "Lispy tree "   is something like ($F 2 ($G 3 4)).
@@ -46,27 +149,12 @@
  *
  * The versions that end in "q" are macros that quote their arguments.
  * `lisptree0' is very configurable. See `lisptree0_config' below.
- *
- * (defun e () (interactive) (find-angg "luatree/lisptree.mac"))
- * (find-angg "MAXIMA/luatree3.mac")
- *
- * «.load-lisp»			(to "load-lisp")
- * «.format»			(to "format")
- * «.atoms»			(to "atoms")
- * «.atoms-test»		(to "atoms-test")
- * «.lisptree0»			(to "lisptree0")
- * «.lisptree0-tests»		(to "lisptree0-tests")
- * «.config»			(to "config")
- * «.config-tests»		(to "config-tests")
- * «.lisptree»			(to "lisptree")
- * «.lisptree-tests»		(to "lisptree-tests")
 */
 
 
 /* «load-lisp»  (to ".load-lisp")
- * Outer part:  this file.
- * Middle part: (find-lisptree "lisptree-middle.lisp")
- * Inner part:  (find-lisptree "lisptree.lisp")
+ * See: (find-lisptree "lisptree.lisp")
+ *      (find-lisptree "lisptree-middle.lisp")
 */
 lisptreedir : pathname_directory(load_pathname);
 load(concat(lisptreedir, "lisptree.lisp"));
@@ -108,7 +196,7 @@ lisptree0_symbol4(o) :=
   elseif nounp(o)    then concat("'",o)   /* %F          -> 'f               */
   else                    string(o);      /* $FOO        -> foo, FOO -> ?foo */
 
-/* «atoms-test»  (to ".atoms-test")
+/* «atoms-tests»  (to ".atoms-tests")
  (eepitch-maxima)
  (eepitch-kill)
  (eepitch-maxima)
@@ -186,6 +274,7 @@ lisptree0(o) :=
  (eepitch-maxima)
 load("lisptree.mac");
 lisptree0(f(a,g(b,c)));
+         [f,a,[g,b,c]];
 
 */
 
