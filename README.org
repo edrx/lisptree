@@ -47,7 +47,7 @@ For htmlized versions of the source files in which all the [[http://anggtwu.net/
 are hmlized correctly, follow these links: [[http://anggtwu.net/lisptree/lisptree.mac.html][lisptree.mac]],
 [[http://anggtwu.net/lisptree/lisptree-middle.lisp.html][lisptree-middle.lisp]], and [[http://anggtwu.net/lisptree/lisptree.lisp.html][lisptree.lisp]].
 
-For more information, see [[http://angg.twu.net/eev-maxima.html#luatree][my page on Maxima]].
+For more information, see [[http://angg.twu.net/eev-maxima.html#lisptree][my page on Maxima]].
 
 The basic tests are [[http://anggtwu.net/lisptree/lisptree.mac.html#download-test][here]].
 

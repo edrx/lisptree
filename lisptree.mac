@@ -126,7 +126,7 @@ maxima --no-init
 
 
 /* «types»  (to ".types")
- * Lisp handles these types of objects:
+ * LispTree uses these "types" of objects:
  * A "Maxima object" is something like f(2,g(3,4)).
  * A "Maxima tree"   is something like [f,2,[g,3,4]].
  * A "Lispy tree "   is something like ($F 2 ($G 3 4)).
