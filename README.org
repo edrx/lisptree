@@ -49,7 +49,12 @@ are hmlized correctly, follow these links: [[http://anggtwu.net/lisptree/lisptre
 
 For more information, see [[http://angg.twu.net/eev-maxima.html#luatree][my page on Maxima]].
 
-The basic tests are [[http://anggtwu.net/lisptree/lisptree.mac.html#lisptree-tests][here]].
+The basic tests are [[http://anggtwu.net/lisptree/lisptree.mac.html#download-test][here]].
+
+If you have Maxima and eev installed you can try LispTree with this
+sexp:
+
+(find-wgeta "https://anggtwu.net/lisptree/lisptree.mac" "download-test")
 
 #+begin_comment
  (eepitch-shell)
